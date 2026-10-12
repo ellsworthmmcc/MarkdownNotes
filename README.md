@@ -1,4 +1,4 @@
-# Notes for Markdown
+# Notes in Markdown
 
 Small quality-of-life improvements for writing Markdown in VS Code.
 

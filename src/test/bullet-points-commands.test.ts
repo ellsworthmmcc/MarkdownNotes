@@ -20,7 +20,7 @@ function placeCursor(editor: vscode.TextEditor, line: number, col: number) {
 }
 
 async function pressEnter() {
-  await vscode.commands.executeCommand('notes-for-markdown.onEnter');
+  await vscode.commands.executeCommand('notes-in-markdown.onEnter');
 }
 
 suite('smartEnter', () => {
