@@ -1,5 +1,5 @@
 {
-  "name": "notesformarkdown",
+  "name": "notes-for-markdown",
   "displayName": "Notes for Markdown",
   "description": "Extension to help when taking notes in Markdown",
   "publisher": "ellsworthmmcc",
@@ -8,6 +8,9 @@
     "type": "git",
     "url": "https://github.com/ellsworthmmcc/Notes-for-Markdown"
   },
+  "bugs": {
+    "url": "https://github.com/ellsworthmmcc/Notes-for-Markdown/issues"
+  },
   "version": "1.0.0",
   "engines": {
     "vscode": "^1.85.0"
@@ -15,19 +18,27 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": ["onLanguage:markdown"],
+  "keywords": [
+    "markdown",
+    "notes",
+    "list",
+    "bullet"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "markdownnotes.onEnter",
+        "command": "notes-for-markdown.onEnter",
         "title": "Smart Enter",
-        "category": "MarkdownNotes"
+        "category": "Notes for Markdown"
       }
     ],
     "keybindings": [
       {
-        "command": "markdownnotes.onEnter",
+        "command": "notes-for-markdown.onEnter",
         "key": "enter",
         "when": "editorTextFocus && !editorReadonly && editorLangId == markdown && !suggestWidgetVisible && !inSnippetMode"
       }
