@@ -5,7 +5,7 @@ import { smartEnter } from './bullet-points-commands';
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
-    vscode.commands.registerCommand('markdownnotes.onEnter', smartEnter)
+    vscode.commands.registerCommand('notes-for-markdown.onEnter', smartEnter)
   );
 }
 
