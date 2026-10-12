@@ -1,12 +1,12 @@
 {
-  "name": "markdownnotes",
-  "displayName": "MarkdownNotes",
+  "name": "notesformarkdown",
+  "displayName": "Notes for Markdown",
   "description": "Extension to help when taking notes in Markdown",
   "publisher": "ellsworthmmcc",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ellsworthmmcc/MarkdownNotes"
+    "url": "https://github.com/ellsworthmmcc/Notes-for-Markdown"
   },
   "version": "1.0.0",
   "engines": {
