@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { analyzeLine, BulletAction } from './bullet-points';
+import { analyzeLine, BulletAction, BulletOptions } from './bullet-points';
 
 interface Plan {
   cursor: vscode.Position;
@@ -13,13 +13,21 @@ export async function smartEnter(): Promise<void> {
 
   if (editor.selections.some(s => !s.isEmpty)) return defaultEnter();
 
+  let options: BulletOptions;
+  try {
+    options = readOptions(editor.document);
+  } catch (err) {
+    console.error(err);
+    return defaultEnter();
+  }
+
   // builds a plan for every cursor, if any cursor isn't on a bullet,
   // lets defaultEnter handle all of them
   const plans: Plan[] = [];
   for (const selection of editor.selections) {
     const cursor = selection.active;
     const line = editor.document.lineAt(cursor.line);
-    const action = analyzeLine(line.text, cursor.character);
+    const action = analyzeLine(line.text, cursor.character, options);
 
     if (!action) return defaultEnter();
     plans.push({ cursor, line, action });
@@ -37,6 +45,24 @@ export async function smartEnter(): Promise<void> {
       }
     }
   });
+}
+
+function readOptions(doc: vscode.TextDocument): BulletOptions {
+  const cfg = vscode.workspace.getConfiguration('notesInMarkdown.bullets', doc);
+
+  const read = (key: keyof BulletOptions): boolean => {
+    const value = cfg.get<boolean>(key); // no fallback: package.json default applies
+    if (typeof value !== 'boolean') {
+      throw new Error(`Setting notesInMarkdown.bullets.${key} must be a boolean`);
+    }
+    return value;
+  };
+
+  return {
+    continueOnEnter: read('continueOnEnter'),
+    splitOnEnter: read('splitOnEnter'),
+    removeEmptyOnEnter: read('removeEmptyOnEnter'),
+  };
 }
 
 async function defaultEnter(): Promise<void> {

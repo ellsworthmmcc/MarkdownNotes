@@ -23,9 +23,30 @@ async function pressEnter() {
   await vscode.commands.executeCommand('notes-in-markdown.onEnter');
 }
 
+type SettingKey = 'continueOnEnter' | 'splitOnEnter' | 'removeEmptyOnEnter';
+
+// settings changed by the current test, so teardown only resets those
+const touched = new Set<SettingKey>();
+
+async function updateSetting(key: SettingKey, value: unknown) {
+  await vscode.workspace
+    .getConfiguration('notesInMarkdown.bullets')
+    .update(key, value, vscode.ConfigurationTarget.Global);
+}
+
+async function setSetting(key: SettingKey, value: unknown) {
+  touched.add(key);
+  await updateSetting(key, value);
+}
+
 suite('smartEnter', () => {
   teardown(async () => {
     await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+    // passing undefined removes the user override, restoring the package.json default
+    for (const key of touched) {
+      await updateSetting(key, undefined);
+    }
+    touched.clear();
   });
 
   test('continues a bullet', async () => {
@@ -114,5 +135,40 @@ suite('smartEnter', () => {
     await pressEnter();
     await vscode.commands.executeCommand('undo');
     assert.strictEqual(text(editor), '- hello');
+  });
+
+  suite('settings', () => {
+    test('continueOnEnter off: Enter at end is a normal newline', async () => {
+      await setSetting('continueOnEnter', false);
+      const editor = await openDoc('- hello');
+      placeCursor(editor, 0, 7);
+      await pressEnter();
+      assert.strictEqual(text(editor), '- hello\n');
+    });
+
+    test('splitOnEnter off: mid-text is a normal newline', async () => {
+      await setSetting('splitOnEnter', false);
+      const editor = await openDoc('- foobar');
+      placeCursor(editor, 0, 5);
+      await pressEnter();
+      assert.strictEqual(text(editor), '- foo\nbar');
+    });
+
+    test('removeEmptyOnEnter off: empty bullet gets a normal newline', async () => {
+      await setSetting('removeEmptyOnEnter', false);
+      const editor = await openDoc('- a\n- ');
+      placeCursor(editor, 1, 2);
+      await pressEnter();
+      assert.strictEqual(text(editor), '- a\n- \n');
+    });
+
+    test('a non-boolean setting value falls back to a normal newline', async () => {
+      // requires the typeof check in readOptions plus the try/catch in smartEnter
+      await setSetting('continueOnEnter', 'no');
+      const editor = await openDoc('- hello');
+      placeCursor(editor, 0, 7);
+      await pressEnter();
+      assert.strictEqual(text(editor), '- hello\n');
+    });
   });
 });

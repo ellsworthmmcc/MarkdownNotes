@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-12
+
+### Added
+
+- Settings to turn each Smart Enter behavior on or off individually:
+  - `notesInMarkdown.bullets.continueOnEnter`
+  - `notesInMarkdown.bullets.splitOnEnter`
+  - `notesInMarkdown.bullets.removeEmptyOnEnter`
+
+### Changed
+
+- If a setting has an invalid value, Smart Enter falls back to a normal Enter instead of failing.
+
 ## [1.0.0] - 2026-10-11
 
 ### Added

@@ -11,7 +11,7 @@
   "bugs": {
     "url": "https://github.com/ellsworthmmcc/Notes-in-Markdown/issues"
   },
-  "version": "1.0.0",
+  "version": "1.1.0",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -42,7 +42,27 @@
         "key": "enter",
         "when": "editorTextFocus && !editorReadonly && editorLangId == markdown && !suggestWidgetVisible && !inSnippetMode"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Notes in Markdown",
+      "properties": {
+        "notesInMarkdown.bullets.continueOnEnter": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Pressing Enter at the end of a bullet starts the next bullet."
+        },
+        "notesInMarkdown.bullets.splitOnEnter": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Pressing Enter in the middle of a bullet splits it into two bullets."
+        },
+        "notesInMarkdown.bullets.removeEmptyOnEnter": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Pressing Enter on an empty bullet removes it and ends the list."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

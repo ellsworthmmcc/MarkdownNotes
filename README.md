@@ -10,6 +10,22 @@ Small quality-of-life improvements for writing Markdown in VS Code.
 - Press Enter in the middle of a bullet to split it into two bullets.
 - Press Enter on an empty bullet to remove it and end the list.
 
+Each behavior can be turned off individually in the settings below.
+
+## Settings
+
+Open Settings (`Ctrl+,`), search for `Notes in Markdown`, or add these to your `settings.json`. All are enabled by default.
+
+| Setting | Description |
+| --- | --- |
+| `notesInMarkdown.bullets.continueOnEnter` | Pressing Enter at the end of a bullet starts the next bullet. |
+| `notesInMarkdown.bullets.splitOnEnter` | Pressing Enter in the middle of a bullet splits it into two bullets. |
+| `notesInMarkdown.bullets.removeEmptyOnEnter` | Pressing Enter on an empty bullet removes it and ends the list. |
+
+When a behavior is turned off, Enter inserts a plain newline instead. For example, with `splitOnEnter` off, pressing Enter mid-bullet leaves the remaining text on the new line without a bullet marker.
+
+Changes take effect immediately, with no reload needed.
+
 ## Requirements
 
 VS Code 1.85.0 or newer.
