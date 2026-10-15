@@ -7,9 +7,13 @@ export interface BulletOptions {
   splitOnEnter: boolean;
   removeEmptyOnEnter: boolean;
   indentOnTab: boolean;
+  removeOnShiftTab: boolean;
 }
 
-const bulletRegex = /^(?<indent>\s*)(?<marker>[-*+]) (?<content>.*)$/;
+const bulletRegex = /^(?<indent>\s*)(?<marker>[-*+]) (?!(\s*\k<marker>){2,}\s*$)(?<content>.*)$/;
+
+/** Length of the marker plus the space after it, e.g. "- ". */
+export const BULLET_PREFIX_LENGTH = 2;
 
 /**
  * Decides what Enter should do on a line.
@@ -25,8 +29,7 @@ export function analyzeLine(
 
   const { indent, marker, content } = match.groups;
 
-  const markerAndSpaceLength = 2;
-  const contentStart = indent.length + markerAndSpaceLength;
+  const contentStart = indent.length + BULLET_PREFIX_LENGTH;
 
   // cursor is before the content, behave like normal enter
   if (cursorCol < contentStart) return null;
@@ -45,7 +48,8 @@ export function analyzeLine(
 
 /**
  * Decides whether Tab should indent the whole line instead of inserting
- * a tab at the cursor. True only when the cursor sits right after "- ".
+ * a tab at the cursor. True when the cursor is anywhere in the bullet's
+ * content (at or after the first character following "- ").
  */
 export function shouldIndentOnTab(
   line: string,
@@ -57,6 +61,27 @@ export function shouldIndentOnTab(
   const match = bulletRegex.exec(line);
   if (!match?.groups) return false;
 
-  const markerAndSpaceLength = 2;
-  return cursorCol >= (match.groups.indent.length + markerAndSpaceLength);
+  const contentStart = match.groups.indent.length + BULLET_PREFIX_LENGTH;
+  return cursorCol >= contentStart;
+}
+
+/**
+ * Decides whether Shift+Tab should remove the bullet marker instead of
+ * outdenting. True only for a bullet with no indentation (it can't be
+ * outdented any further) when the cursor is in the bullet's content.
+ */
+export function shouldRemoveBulletOnShiftTab(
+  line: string,
+  cursorCol: number,
+  options: BulletOptions,
+): boolean {
+  if (!options.removeOnShiftTab) return false;
+
+  const match = bulletRegex.exec(line);
+  if (!match?.groups) return false;
+
+  // indented bullets get the normal outdent first
+  if (match.groups.indent.length > 0) return false;
+
+  return cursorCol >= BULLET_PREFIX_LENGTH;
 }

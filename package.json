@@ -11,7 +11,7 @@
   "bugs": {
     "url": "https://github.com/ellsworthmmcc/Notes-in-Markdown/issues"
   },
-  "version": "1.1.0",
+  "version": "1.2.0",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -39,6 +39,11 @@
         "command": "notes-in-markdown.onTab",
         "title": "Smart Tab",
         "category": "Notes in Markdown"
+      },
+      {
+        "command": "notes-in-markdown.onShiftTab",
+        "title": "Smart Shift+Tab",
+        "category": "Notes in Markdown"
       }
     ],
     "keybindings": [
@@ -51,6 +56,11 @@
         "command": "notes-in-markdown.onTab",
         "key": "tab",
         "when": "editorTextFocus && !editorReadonly && !editorTabMovesFocus && editorLangId == markdown && !suggestWidgetVisible && !inlineSuggestionVisible && !inSnippetMode"
+      },
+      {
+        "command": "notes-in-markdown.onShiftTab",
+        "key": "shift+tab",
+        "when": "editorTextFocus && !editorReadonly && !editorTabMovesFocus && editorLangId == markdown && !suggestWidgetVisible && !inSnippetMode"
       }
     ],
     "configuration": {
@@ -75,6 +85,11 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Pressing Tab inside a bullet indents the whole line using your editor's indent settings."
+        },
+        "notesInMarkdown.bullets.removeOnShiftTab": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Pressing Shift+Tab on a bullet that has no indentation removes the bullet marker and keeps the text."
         }
       }
     }

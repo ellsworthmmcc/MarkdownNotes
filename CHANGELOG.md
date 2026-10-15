@@ -6,13 +6,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
-### Changed
-
-- An invalid value for one setting now only affects that setting, which falls back to its default. Previously it disabled all Smart Enter and Smart Tab behavior.
+## [1.2.0] - 2026-10-14
 
 ### Added
 
 - Pressing Tab inside a bullet indents the whole line using the editor's indent settings. Can be turned off with `notesInMarkdown.bullets.indentOnTab`.
+- Pressing Shift+Tab on a bullet with no indentation removes the bullet marker and keeps the text. Indented bullets are outdented as usual. Can be turned off with `notesInMarkdown.bullets.removeOnShiftTab`.
+- A warning is shown when a setting has an invalid value.
+
+### Changed
+
+- An invalid value for one setting now only affects that setting, which falls back to its default. Previously it disabled all Smart Enter and Smart Tab behavior.
+- Settings are read once and cached, instead of on every keypress.
 
 ## [1.1.0] - 2026-10-12
 

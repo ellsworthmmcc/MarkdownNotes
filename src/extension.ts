@@ -3,7 +3,7 @@ import { OptionsCache, createCommands, validateSettings } from './bullet-points-
 
 export function activate(context: vscode.ExtensionContext) {
   const options = new OptionsCache();
-  const { smartEnter, smartTab } = createCommands(options);
+  const { smartEnter, smartTab, smartShiftTab } = createCommands(options);
 
   validateSettings();
 
@@ -11,6 +11,7 @@ export function activate(context: vscode.ExtensionContext) {
     options,
     vscode.commands.registerCommand('notes-in-markdown.onEnter', smartEnter),
     vscode.commands.registerCommand('notes-in-markdown.onTab', smartTab),
+    vscode.commands.registerCommand('notes-in-markdown.onShiftTab', smartShiftTab),
   );
 }
 

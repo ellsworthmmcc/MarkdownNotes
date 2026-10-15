@@ -1,5 +1,10 @@
 import * as assert from 'assert';
-import { analyzeLine, shouldIndentOnTab, BulletOptions } from '../bullet-points';
+import {
+  analyzeLine,
+  shouldIndentOnTab,
+  shouldRemoveBulletOnShiftTab,
+  BulletOptions,
+} from '../bullet-points';
 import { loadManifestDefaults, manifestOptionKeys } from './helpers'
 
 const defaults = loadManifestDefaults();
@@ -103,6 +108,40 @@ suite('shouldIndentOnTab', () => {
   });
 });
 
+suite('shouldRemoveBulletOnShiftTab', () => {
+  test('unindented bullet, cursor in the content', () => {
+    assert.strictEqual(shouldRemoveBulletOnShiftTab('- hi', 2, defaults), true);
+    assert.strictEqual(shouldRemoveBulletOnShiftTab('- hi', 3, defaults), true);
+    assert.strictEqual(shouldRemoveBulletOnShiftTab('- hi', 4, defaults), true);
+    assert.strictEqual(shouldRemoveBulletOnShiftTab('* hi', 4, defaults), true);
+    assert.strictEqual(shouldRemoveBulletOnShiftTab('+ hi', 4, defaults), true);
+    assert.strictEqual(shouldRemoveBulletOnShiftTab('- ', 2, defaults), true);
+  });
+
+  test('indented bullets are outdented normally first', () => {
+    assert.strictEqual(shouldRemoveBulletOnShiftTab('  - hi', 4, defaults), false);
+    assert.strictEqual(shouldRemoveBulletOnShiftTab('\t- hi', 3, defaults), false);
+  });
+
+  test('cursor on the marker does not', () => {
+    assert.strictEqual(shouldRemoveBulletOnShiftTab('- hi', 0, defaults), false);
+    assert.strictEqual(shouldRemoveBulletOnShiftTab('- hi', 1, defaults), false);
+  });
+
+  test('non-bullet lines do not', () => {
+    assert.strictEqual(shouldRemoveBulletOnShiftTab('hello', 2, defaults), false);
+    assert.strictEqual(shouldRemoveBulletOnShiftTab('-no', 3, defaults), false);
+    assert.strictEqual(shouldRemoveBulletOnShiftTab('---', 3, defaults), false);
+  });
+
+  test('removeOnShiftTab off', () => {
+    assert.strictEqual(
+      shouldRemoveBulletOnShiftTab('- hi', 2, { ...defaults, removeOnShiftTab: false }),
+      false,
+    );
+  });
+});
+
 suite('options', () => {
   // the behavior tests above assume every feature is on, so pin that explicitly
   const allOn: BulletOptions = {
@@ -110,6 +149,7 @@ suite('options', () => {
     splitOnEnter: true,
     removeEmptyOnEnter: true,
     indentOnTab: true,
+    removeOnShiftTab: true,
   };
 
   test('continueOnEnter off: Enter at end is default', () => {
@@ -139,17 +179,27 @@ suite('options', () => {
       splitOnEnter: false,
       removeEmptyOnEnter: false,
       indentOnTab: false,
+      removeOnShiftTab: false,
     };
     assert.strictEqual(analyzeLine('- hi', 4, allOff), null);
     assert.strictEqual(analyzeLine('- foobar', 5, allOff), null);
     assert.strictEqual(analyzeLine('- ', 2, allOff), null);
   });
 
-  test('indentOnTab off does not affect Enter', () => {
-    assert.deepStrictEqual(analyzeLine('- hi', 4, { ...allOn, indentOnTab: false }), {
+  test('Tab and Shift+Tab settings do not affect Enter', () => {
+    const opts = { ...allOn, indentOnTab: false, removeOnShiftTab: false };
+    assert.deepStrictEqual(analyzeLine('- hi', 4, opts), {
       kind: 'newBullet',
       prefix: '- ',
     });
+  });
+
+  test('removeOnShiftTab does not affect Tab, and vice versa', () => {
+    assert.strictEqual(shouldIndentOnTab('- hi', 2, { ...allOn, removeOnShiftTab: false }), true);
+    assert.strictEqual(
+      shouldRemoveBulletOnShiftTab('- hi', 2, { ...allOn, indentOnTab: false }),
+      true,
+    );
   });
 });
 
@@ -160,6 +210,7 @@ suite('manifest', () => {
     splitOnEnter: true,
     removeEmptyOnEnter: true,
     indentOnTab: true,
+    removeOnShiftTab: true,
   };
 
   test('package.json declares exactly the options in BulletOptions', () => {

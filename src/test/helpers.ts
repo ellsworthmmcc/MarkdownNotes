@@ -27,6 +27,7 @@ export function loadManifestDefaults(): BulletOptions {
     splitOnEnter: bool('splitOnEnter'),
     removeEmptyOnEnter: bool('removeEmptyOnEnter'),
     indentOnTab: bool('indentOnTab'),
+    removeOnShiftTab: bool('removeOnShiftTab'),
   };
 }
 

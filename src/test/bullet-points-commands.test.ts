@@ -31,7 +31,16 @@ async function pressTab() {
   await vscode.commands.executeCommand('notes-in-markdown.onTab');
 }
 
-type SettingKey = 'continueOnEnter' | 'splitOnEnter' | 'removeEmptyOnEnter' | 'indentOnTab';
+async function pressShiftTab() {
+  await vscode.commands.executeCommand('notes-in-markdown.onShiftTab');
+}
+
+type SettingKey =
+  | 'continueOnEnter'
+  | 'splitOnEnter'
+  | 'removeEmptyOnEnter'
+  | 'indentOnTab'
+  | 'removeOnShiftTab';
 
 // settings changed by the current test, so teardown only resets those
 const touched = new Set<SettingKey>();
@@ -312,24 +321,182 @@ suite('bullet commands', () => {
         assert.strictEqual(text(editor), '- \thello');
       });
 
-    test('a bad indentOnTab value uses its default', async () => {
-      await setSetting('indentOnTab', 'no');
+      test('a bad indentOnTab value uses its default', async () => {
+        await setSetting('indentOnTab', 'no');
+        const editor = await openDoc('- hello');
+        editor.options = { tabSize: 4, insertSpaces: true };
+        placeCursor(editor, 0, 2);
+        await pressTab();
+        // default is true, so the line indents
+        assert.strictEqual(text(editor), '    - hello');
+      });
+
+      test('a bad setting for another feature does not break Tab', async () => {
+        await setSetting('continueOnEnter', 'no');
+        const editor = await openDoc('- hello');
+        editor.options = { tabSize: 4, insertSpaces: true };
+        placeCursor(editor, 0, 2);
+        await pressTab();
+        assert.strictEqual(text(editor), '    - hello');
+      });
+    });
+  });
+
+  suite('smartShiftTab', () => {
+    test('removes the marker from an unindented bullet', async () => {
       const editor = await openDoc('- hello');
-      editor.options = { tabSize: 4, insertSpaces: true };
-      placeCursor(editor, 0, 2);
-      await pressTab();
-      // default is true, so the line indents
-      assert.strictEqual(text(editor), '    - hello');
+      placeCursor(editor, 0, 7);
+      await pressShiftTab();
+      assert.strictEqual(text(editor), 'hello');
+      assert.deepStrictEqual(cursorOf(editor), [0, 5]);
     });
 
-    test('a bad setting for another feature does not break Tab', async () => {
-      await setSetting('continueOnEnter', 'no');
+    test('works with the cursor mid-bullet', async () => {
       const editor = await openDoc('- hello');
-      editor.options = { tabSize: 4, insertSpaces: true };
-      placeCursor(editor, 0, 2);
-      await pressTab();
-      assert.strictEqual(text(editor), '    - hello');
+      placeCursor(editor, 0, 4);
+      await pressShiftTab();
+      assert.strictEqual(text(editor), 'hello');
+      assert.deepStrictEqual(cursorOf(editor), [0, 2]);
     });
+
+    test('an empty bullet becomes an empty line', async () => {
+      const editor = await openDoc('- ');
+      placeCursor(editor, 0, 2);
+      await pressShiftTab();
+      assert.strictEqual(text(editor), '');
+      assert.deepStrictEqual(cursorOf(editor), [0, 0]);
+    });
+
+    test('only the cursor line changes', async () => {
+      const editor = await openDoc('- a\n- b\n- c');
+      placeCursor(editor, 1, 3);
+      await pressShiftTab();
+      assert.strictEqual(text(editor), '- a\nb\n- c');
+    });
+
+    test('works with other markers', async () => {
+      const editor = await openDoc('* hello');
+      placeCursor(editor, 0, 7);
+      await pressShiftTab();
+      assert.strictEqual(text(editor), 'hello');
+    });
+
+    test('an indented bullet is outdented, not removed', async () => {
+      const editor = await openDoc('  - hello');
+      editor.options = { tabSize: 2, insertSpaces: true };
+      placeCursor(editor, 0, 9);
+      await pressShiftTab();
+      assert.strictEqual(text(editor), '- hello');
+    });
+
+    test('a second Shift+Tab then removes the marker', async () => {
+      const editor = await openDoc('  - hello');
+      editor.options = { tabSize: 2, insertSpaces: true };
+      placeCursor(editor, 0, 9);
+      await pressShiftTab();
+      await pressShiftTab();
+      assert.strictEqual(text(editor), 'hello');
+    });
+
+    test('cursor on the marker is a normal Shift+Tab (nothing to outdent)', async () => {
+      const editor = await openDoc('- hello');
+      editor.options = { tabSize: 2, insertSpaces: true };
+      placeCursor(editor, 0, 1);
+      await pressShiftTab();
+      assert.strictEqual(text(editor), '- hello');
+    });
+
+    test('a plain indented line is outdented normally', async () => {
+      const editor = await openDoc('  hello');
+      editor.options = { tabSize: 2, insertSpaces: true };
+      placeCursor(editor, 0, 7);
+      await pressShiftTab();
+      assert.strictEqual(text(editor), 'hello');
+    });
+
+    test('a plain unindented line is unchanged', async () => {
+      const editor = await openDoc('hello');
+      editor.options = { tabSize: 2, insertSpaces: true };
+      placeCursor(editor, 0, 5);
+      await pressShiftTab();
+      assert.strictEqual(text(editor), 'hello');
+    });
+
+    test('a non-empty selection falls back to a normal Shift+Tab', async () => {
+      const editor = await openDoc('- hello');
+      editor.options = { tabSize: 2, insertSpaces: true };
+      editor.selection = new vscode.Selection(0, 2, 0, 7);
+      await pressShiftTab();
+      // nothing to outdent, and the marker is not removed
+      assert.strictEqual(text(editor), '- hello');
+    });
+
+    test('multiple cursors on unindented bullets: all markers removed', async () => {
+      const editor = await openDoc('- a\n- b');
+      editor.selections = [
+        new vscode.Selection(0, 3, 0, 3),
+        new vscode.Selection(1, 3, 1, 3),
+      ];
+      await pressShiftTab();
+      assert.strictEqual(text(editor), 'a\nb');
+    });
+
+    test('two cursors on the same bullet: marker removed once', async () => {
+      const editor = await openDoc('- hello');
+      editor.selections = [
+        new vscode.Selection(0, 3, 0, 3),
+        new vscode.Selection(0, 5, 0, 5),
+      ];
+      await pressShiftTab();
+      assert.strictEqual(text(editor), 'hello');
+    });
+
+    test('multiple cursors, one on an indented bullet: falls back for all', async () => {
+      const editor = await openDoc('  - a\n- b');
+      editor.options = { tabSize: 2, insertSpaces: true };
+      editor.selections = [
+        new vscode.Selection(0, 5, 0, 5),
+        new vscode.Selection(1, 3, 1, 3),
+      ];
+      await pressShiftTab();
+      // the indented bullet is outdented, the unindented one keeps its marker
+      assert.strictEqual(text(editor), '- a\n- b');
+    });
+
+    test('one Undo restores the marker', async () => {
+      const editor = await openDoc('- hello');
+      placeCursor(editor, 0, 7);
+      await pressShiftTab();
+      await vscode.commands.executeCommand('undo');
+      assert.strictEqual(text(editor), '- hello');
+    });
+
+    suite('settings', () => {
+      test('removeOnShiftTab off: the marker stays', async () => {
+        await setSetting('removeOnShiftTab', false);
+        const editor = await openDoc('- hello');
+        editor.options = { tabSize: 2, insertSpaces: true };
+        placeCursor(editor, 0, 7);
+        await pressShiftTab();
+        assert.strictEqual(text(editor), '- hello');
+      });
+
+      test('a bad removeOnShiftTab value uses its default', async () => {
+        await setSetting('removeOnShiftTab', 'no');
+        const editor = await openDoc('- hello');
+        placeCursor(editor, 0, 7);
+        await pressShiftTab();
+        // default is true, so the marker is removed
+        assert.strictEqual(text(editor), 'hello');
+      });
+
+      test('a bad setting for another feature does not break Shift+Tab', async () => {
+        await setSetting('indentOnTab', 'no');
+        const editor = await openDoc('- hello');
+        placeCursor(editor, 0, 7);
+        await pressShiftTab();
+        assert.strictEqual(text(editor), 'hello');
+      });
     });
   });
 });

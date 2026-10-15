@@ -1,5 +1,12 @@
 import * as vscode from 'vscode';
-import { analyzeLine, shouldIndentOnTab, BulletAction, BulletOptions } from './bullet-points';
+import {
+  analyzeLine,
+  shouldIndentOnTab,
+  shouldRemoveBulletOnShiftTab,
+  BULLET_PREFIX_LENGTH,
+  BulletAction,
+  BulletOptions,
+} from './bullet-points';
 
 interface Plan {
   cursor: vscode.Position;
@@ -18,6 +25,7 @@ const optionKeys: Record<keyof BulletOptions, true> = {
   splitOnEnter: true,
   removeEmptyOnEnter: true,
   indentOnTab: true,
+  removeOnShiftTab: true,
 };
 
 const SECTION = 'notesInMarkdown.bullets';
@@ -42,6 +50,7 @@ function readOptions(): BulletOptions {
     splitOnEnter: read('splitOnEnter'),
     removeEmptyOnEnter: read('removeEmptyOnEnter'),
     indentOnTab: read('indentOnTab'),
+    removeOnShiftTab: read('removeOnShiftTab'),
   };
 }
 
@@ -131,6 +140,7 @@ export function createCommands(options: OptionsCache) {
   return {
     smartEnter: withContext(enterHandler, defaultEnter),
     smartTab: withContext(tabHandler, defaultTab),
+    smartShiftTab: withContext(shiftTabHandler, defaultShiftTab),
   };
 }
 
@@ -176,10 +186,37 @@ async function tabHandler({ editor, options }: CommandContext): Promise<void> {
   await vscode.commands.executeCommand('editor.action.indentLines');
 }
 
+async function shiftTabHandler({ editor, options }: CommandContext): Promise<void> {
+  // remove markers only if every cursor is on an unindented bullet;
+  // otherwise the normal outdent handles all of them
+  // (a Set, so two cursors on one line don't produce overlapping deletes)
+  const lines = new Set<number>();
+  for (const selection of editor.selections) {
+    const { line, character } = selection.active;
+    const text = editor.document.lineAt(line).text;
+
+    if (!shouldRemoveBulletOnShiftTab(text, character, options)) {
+      return defaultShiftTab();
+    }
+    lines.add(line);
+  }
+
+  await editor.edit(editBuilder => {
+    for (const line of lines) {
+      // no indentation, so the marker and its space start at column 0
+      editBuilder.delete(new vscode.Range(line, 0, line, BULLET_PREFIX_LENGTH));
+    }
+  });
+}
+
 async function defaultEnter(): Promise<void> {
   await vscode.commands.executeCommand('default:type', { text: '\n' });
 }
 
 async function defaultTab(): Promise<void> {
   await vscode.commands.executeCommand('tab');
+}
+
+async function defaultShiftTab(): Promise<void> {
+  await vscode.commands.executeCommand('outdent');
 }
