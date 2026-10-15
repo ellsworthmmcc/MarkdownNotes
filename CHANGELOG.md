@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed
+
+- An invalid value for one setting now only affects that setting, which falls back to its default. Previously it disabled all Smart Enter and Smart Tab behavior.
+
 ### Added
 
 - Pressing Tab inside a bullet indents the whole line using the editor's indent settings. Can be turned off with `notesInMarkdown.bullets.indentOnTab`.

@@ -37,9 +37,22 @@ type SettingKey = 'continueOnEnter' | 'splitOnEnter' | 'removeEmptyOnEnter' | 'i
 const touched = new Set<SettingKey>();
 
 async function updateSetting(key: SettingKey, value: unknown) {
+  // wait for the change event, so the extension's cache is cleared before the test continues
+  const changed = new Promise<void>(resolve => {
+    const sub = vscode.workspace.onDidChangeConfiguration(e => {
+      if (e.affectsConfiguration(`notesInMarkdown.bullets.${key}`)) {
+        sub.dispose();
+        resolve();
+      }
+    });
+    // no event fires if the value didn't actually change, so don't hang
+    setTimeout(() => { sub.dispose(); resolve(); }, 1000);
+  });
+
   await vscode.workspace
     .getConfiguration('notesInMarkdown.bullets')
     .update(key, value, vscode.ConfigurationTarget.Global);
+  await changed;
 }
 
 async function setSetting(key: SettingKey, value: unknown) {
@@ -168,13 +181,23 @@ suite('bullet commands', () => {
         assert.strictEqual(text(editor), '- a\n- \n');
       });
 
-      test('a non-boolean setting value falls back to a normal newline', async () => {
-        // requires the typeof check in readOptions plus the try/catch in smartEnter
+      test('a non-boolean setting value uses its default', async () => {
         await setSetting('continueOnEnter', 'no');
         const editor = await openDoc('- hello');
         placeCursor(editor, 0, 7);
         await pressEnter();
-        assert.strictEqual(text(editor), '- hello\n');
+        // default is true, so the bullet still continues
+        assert.strictEqual(text(editor), '- hello\n- ');
+      });
+
+      test('a bad setting does not affect other Enter settings', async () => {
+        await setSetting('continueOnEnter', 'no');
+        await setSetting('splitOnEnter', false);
+        const editor = await openDoc('- foobar');
+        placeCursor(editor, 0, 5);
+        await pressEnter();
+        // splitOnEnter is valid and off, so it is still honored
+        assert.strictEqual(text(editor), '- foo\nbar');
       });
     });
   });
@@ -289,14 +312,24 @@ suite('bullet commands', () => {
         assert.strictEqual(text(editor), '- \thello');
       });
 
-      test('a non-boolean indentOnTab value falls back to a normal tab', async () => {
-        await setSetting('indentOnTab', 'no');
-        const editor = await openDoc('- hello');
-        editor.options = { tabSize: 4, insertSpaces: false };
-        placeCursor(editor, 0, 2);
-        await pressTab();
-        assert.strictEqual(text(editor), '- \thello');
-      });
+    test('a bad indentOnTab value uses its default', async () => {
+      await setSetting('indentOnTab', 'no');
+      const editor = await openDoc('- hello');
+      editor.options = { tabSize: 4, insertSpaces: true };
+      placeCursor(editor, 0, 2);
+      await pressTab();
+      // default is true, so the line indents
+      assert.strictEqual(text(editor), '    - hello');
+    });
+
+    test('a bad setting for another feature does not break Tab', async () => {
+      await setSetting('continueOnEnter', 'no');
+      const editor = await openDoc('- hello');
+      editor.options = { tabSize: 4, insertSpaces: true };
+      placeCursor(editor, 0, 2);
+      await pressTab();
+      assert.strictEqual(text(editor), '    - hello');
+    });
     });
   });
 });
