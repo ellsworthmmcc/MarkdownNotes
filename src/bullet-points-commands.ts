@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { analyzeLine, BulletAction, BulletOptions } from './bullet-points';
+import { analyzeLine,shouldIndentOnTab, BulletAction, BulletOptions } from './bullet-points';
 
 interface Plan {
   cursor: vscode.Position;
@@ -47,6 +47,33 @@ export async function smartEnter(): Promise<void> {
   });
 }
 
+export async function smartTab(): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return defaultTab();
+
+  if (editor.selections.some(s => !s.isEmpty)) return defaultTab();
+
+  let options: BulletOptions;
+  try {
+    options = readOptions(editor.document);
+  } catch (err) {
+    console.error(err);
+    return defaultTab();
+  }
+
+  const allAtBulletStart = editor.selections.every(s =>
+    shouldIndentOnTab(
+      editor.document.lineAt(s.active.line).text,
+      s.active.character,
+      options,
+    ),
+  );
+  if (!allAtBulletStart) return defaultTab();
+
+  // uses editor.tabSize / insertSpaces / detectIndentation
+  await vscode.commands.executeCommand('editor.action.indentLines');
+}
+
 function readOptions(doc: vscode.TextDocument): BulletOptions {
   const cfg = vscode.workspace.getConfiguration('notesInMarkdown.bullets', doc);
 
@@ -62,9 +89,14 @@ function readOptions(doc: vscode.TextDocument): BulletOptions {
     continueOnEnter: read('continueOnEnter'),
     splitOnEnter: read('splitOnEnter'),
     removeEmptyOnEnter: read('removeEmptyOnEnter'),
+    indentOnTab: read('indentOnTab'),
   };
 }
 
 async function defaultEnter(): Promise<void> {
   await vscode.commands.executeCommand('default:type', { text: '\n'});
+}
+
+async function defaultTab(): Promise<void> {
+  await vscode.commands.executeCommand('tab');
 }

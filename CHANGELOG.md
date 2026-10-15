@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- Pressing Tab inside a bullet indents the whole line using the editor's indent settings. Can be turned off with `notesInMarkdown.bullets.indentOnTab`.
+
 ## [1.1.0] - 2026-10-12
 
 ### Added

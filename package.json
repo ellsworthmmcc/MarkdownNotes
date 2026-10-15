@@ -34,6 +34,11 @@
         "command": "notes-in-markdown.onEnter",
         "title": "Smart Enter",
         "category": "Notes in Markdown"
+      },
+      {
+        "command": "notes-in-markdown.onTab",
+        "title": "Smart Tab",
+        "category": "Notes in Markdown"
       }
     ],
     "keybindings": [
@@ -41,6 +46,11 @@
         "command": "notes-in-markdown.onEnter",
         "key": "enter",
         "when": "editorTextFocus && !editorReadonly && editorLangId == markdown && !suggestWidgetVisible && !inSnippetMode"
+      },
+      {
+        "command": "notes-in-markdown.onTab",
+        "key": "tab",
+        "when": "editorTextFocus && !editorReadonly && !editorTabMovesFocus && editorLangId == markdown && !suggestWidgetVisible && !inlineSuggestionVisible && !inSnippetMode"
       }
     ],
     "configuration": {
@@ -60,6 +70,11 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Pressing Enter on an empty bullet removes it and ends the list."
+        },
+        "notesInMarkdown.bullets.indentOnTab": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Pressing Tab inside a bullet indents the whole line using your editor's indent settings."
         }
       }
     }

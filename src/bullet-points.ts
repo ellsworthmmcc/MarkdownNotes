@@ -6,6 +6,7 @@ export interface BulletOptions {
   continueOnEnter: boolean;
   splitOnEnter: boolean;
   removeEmptyOnEnter: boolean;
+  indentOnTab: boolean;
 }
 
 const bulletRegex = /^(?<indent>\s*)(?<marker>[-*+]) (?<content>.*)$/;
@@ -40,4 +41,22 @@ export function analyzeLine(
   if (atEnd ? !options.continueOnEnter : !options.splitOnEnter) return null;
 
   return { kind: 'newBullet', prefix: `${indent}${marker} ` };
+}
+
+/**
+ * Decides whether Tab should indent the whole line instead of inserting
+ * a tab at the cursor. True only when the cursor sits right after "- ".
+ */
+export function shouldIndentOnTab(
+  line: string,
+  cursorCol: number,
+  options: BulletOptions,
+): boolean {
+  if (!options.indentOnTab) return false;
+
+  const match = bulletRegex.exec(line);
+  if (!match?.groups) return false;
+
+  const markerAndSpaceLength = 2;
+  return cursorCol >= (match.groups.indent.length + markerAndSpaceLength);
 }

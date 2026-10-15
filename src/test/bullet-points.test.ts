@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { analyzeLine, BulletOptions } from '../bullet-points';
+import { analyzeLine, shouldIndentOnTab, BulletOptions } from '../bullet-points';
 import { loadManifestDefaults, manifestOptionKeys } from './helpers'
 
 const defaults = loadManifestDefaults();
@@ -78,12 +78,38 @@ suite('analyzeLine', () => {
   });
 });
 
+suite('shouldIndentOnTab', () => {
+  test('cursor anywhere in the content indents', () => {
+    assert.strictEqual(shouldIndentOnTab('- hi', 2, defaults), true);
+    assert.strictEqual(shouldIndentOnTab('- hi', 3, defaults), true);
+    assert.strictEqual(shouldIndentOnTab('- hi', 4, defaults), true);
+    assert.strictEqual(shouldIndentOnTab('  * hi', 4, defaults), true);
+    assert.strictEqual(shouldIndentOnTab('- ', 2, defaults), true);
+  });
+
+  test('cursor in the indentation or on the marker does not', () => {
+    assert.strictEqual(shouldIndentOnTab('  - hi', 1, defaults), false);
+    assert.strictEqual(shouldIndentOnTab('- hi', 1, defaults), false);
+  });
+
+  test('non-bullet lines do not', () => {
+    assert.strictEqual(shouldIndentOnTab('hello', 2, defaults), false);
+    assert.strictEqual(shouldIndentOnTab('-no', 3, defaults), false);
+    assert.strictEqual(shouldIndentOnTab('---', 3, defaults), false);
+  });
+
+  test('indentOnTab off', () => {
+    assert.strictEqual(shouldIndentOnTab('- hi', 2, { ...defaults, indentOnTab: false }), false);
+  });
+});
+
 suite('options', () => {
   // the behavior tests above assume every feature is on, so pin that explicitly
   const allOn: BulletOptions = {
     continueOnEnter: true,
     splitOnEnter: true,
     removeEmptyOnEnter: true,
+    indentOnTab: true,
   };
 
   test('continueOnEnter off: Enter at end is default', () => {
@@ -107,15 +133,23 @@ suite('options', () => {
     assert.strictEqual(analyzeLine('- ', 2, { ...allOn, removeEmptyOnEnter: false }), null);
   });
 
-  test('all features off: every bullet case is default', () => {
+  test('all Enter features off: every bullet case is default', () => {
     const allOff: BulletOptions = {
       continueOnEnter: false,
       splitOnEnter: false,
       removeEmptyOnEnter: false,
+      indentOnTab: false,
     };
     assert.strictEqual(analyzeLine('- hi', 4, allOff), null);
     assert.strictEqual(analyzeLine('- foobar', 5, allOff), null);
     assert.strictEqual(analyzeLine('- ', 2, allOff), null);
+  });
+
+  test('indentOnTab off does not affect Enter', () => {
+    assert.deepStrictEqual(analyzeLine('- hi', 4, { ...allOn, indentOnTab: false }), {
+      kind: 'newBullet',
+      prefix: '- ',
+    });
   });
 });
 
@@ -125,6 +159,7 @@ suite('manifest', () => {
     continueOnEnter: true,
     splitOnEnter: true,
     removeEmptyOnEnter: true,
+    indentOnTab: true,
   };
 
   test('package.json declares exactly the options in BulletOptions', () => {

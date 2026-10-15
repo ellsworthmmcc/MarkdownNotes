@@ -12,6 +12,10 @@ Small quality-of-life improvements for writing Markdown in VS Code.
 
 Each behavior can be turned off individually in the settings below.
 
+**Smart Tab for bullet lists**
+
+- Press Tab anywhere inside a bullet to indent the whole line using your editor's indent settings (`editor.tabSize`, `editor.insertSpaces`), instead of inserting a tab in place.
+
 ## Settings
 
 Open Settings (`Ctrl+,`), search for `Notes in Markdown`, or add these to your `settings.json`. All are enabled by default.
@@ -21,6 +25,7 @@ Open Settings (`Ctrl+,`), search for `Notes in Markdown`, or add these to your `
 | `notesInMarkdown.bullets.continueOnEnter` | Pressing Enter at the end of a bullet starts the next bullet. |
 | `notesInMarkdown.bullets.splitOnEnter` | Pressing Enter in the middle of a bullet splits it into two bullets. |
 | `notesInMarkdown.bullets.removeEmptyOnEnter` | Pressing Enter on an empty bullet removes it and ends the list. |
+| `notesInMarkdown.bullets.indentOnTab` | Pressing Tab inside a bullet indents the whole line using your editor's indent settings. |
 
 When a behavior is turned off, Enter inserts a plain newline instead. For example, with `splitOnEnter` off, pressing Enter mid-bullet leaves the remaining text on the new line without a bullet marker.
 
